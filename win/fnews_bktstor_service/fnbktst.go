@@ -24,18 +24,17 @@ SOFTWARE.
 package main
 
 import "fmt"
-import "github.com/maxymania/fnews/common/fnewsd"
+import "github.com/maxymania/fnews/common/bktstor_d"
 import "golang.org/x/sys/windows/svc"
 
-// go build github.com/maxymania/fnews/win/fnews_service
+// go build github.com/maxymania/fnews/win/fnews_bktstor_service
 
 type service struct {}
 
 func doserve() {
-	lc := fnewsd.NewLifecycle()
-	e := lc.Load()
-	if e!=nil { fmt.Println(e); return }
-	lc.Serve()
+	lc := bktstor_d.NewLifecycle()
+	e := lc.LoadAndServe()
+	if e!=nil { fmt.Println(e) }
 }
 
 func (_ service) Execute(args []string, r <-chan svc.ChangeRequest, changes chan<- svc.Status) (svcSpecificEC bool, exitCode uint32) {
@@ -55,7 +54,6 @@ func (_ service) Execute(args []string, r <-chan svc.ChangeRequest, changes chan
 func main() {
 	isOK,err := svc.IsAnInteractiveSession()
 	if err!=nil || !isOK { return }
-	svc.Run("fnews_service",service{})
+	svc.Run("fnews_bktstor_service",service{})
 }
-
 
