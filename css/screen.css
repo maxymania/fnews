@@ -32,6 +32,12 @@
     padding: 3px 4px;
     border-right: #ccc solid 1px;
   }
+  pre.highlight, pre {
+    padding: 16px;
+    background-color: #e2e2e2;
+    border-radius: 3px;
+    margin-bottom: 15px;
+  }
 }
 
 
