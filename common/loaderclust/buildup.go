@@ -86,6 +86,12 @@ func CreateClusterConfig(clust *config.BucketCluster,memb *cluster.Membered) (mc
 	/* mc.Ping     = memb */
 	mc.Alive    = memb
 	
+	if clust.NodeName!="" { mc.Name = clust.NodeName }
+	if clust.BindAddr!="" { mc.BindAddr = clust.BindAddr }
+	if clust.BindPort!=0  { mc.BindPort = clust.BindPort }
+	if clust.AdvertiseAddr!="" { mc.AdvertiseAddr = clust.AdvertiseAddr }
+	if clust.AdvertisePort!=0  { mc.AdvertisePort = clust.AdvertisePort }
+	
 	return
 }
 func CreateCluster(clust *config.BucketCluster, mlist *memberlist.Memberlist) (int, error) {
