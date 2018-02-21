@@ -2,24 +2,36 @@
   a {
     color: black;
   }
-h1,h2,h3,h4,h5,h6,p {
-  padding-bottom: 0.3em;
-}
-
-table{
-  margin: 5px 5px 13px 5px;
-}
-
-thead {
-  border-bottom: black solid 1px;
-}
-th, td{
-  padding-right: 10px;
-}
-
-tbody{
-  border: #eee solid 1px;
-}
+  h1,h2,h3,h4,h5,h6,p {
+    padding-bottom: 0.3em;
+  }
+  
+  table{
+    margin: 5px 5px 13px 5px;
+  }
+  
+  thead {
+    border-bottom: black solid 1px;
+  }
+  th, td{
+    padding-right: 10px;
+  }
+  
+  tbody{
+    border: #eee solid 1px;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #FFa;
+  }
+  tbody tr:nth-child(odd) {
+    background-color: #ffe;
+  }
+  
+  th,td{
+    padding: 3px 4px;
+    border-right: #ccc solid 1px;
+  }
 }
 
 
