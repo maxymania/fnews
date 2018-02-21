@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+   <meta charset="utf-8"/>
+   <title>{{ page.title }} - {{ site.title }}</title>
+   <!-- syntax highlighting CSS -->
+   <link href="{{site.baseurl}}/css/syntax.css" rel="stylesheet" type="text/css" />
+   <!-- Mobile viewport optimisation -->
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <!-- (en) Add your meta data here -->
+   <!-- (de) Fuegen Sie hier ihre Meta-Daten ein -->
+   <link href="{{site.baseurl}}/css/yaml.css" rel="stylesheet" type="text/css"/>
+   <!--[if lte IE 7]>
+   <link href="../yaml/core/iehacks.css" rel="stylesheet" type="text/css" />
+   <![endif]-->
+   <link href="{{site.baseurl}}/css/screen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<ul class="ym-skiplinks">
+	<li><a class="ym-skip" href="#nav">Skip to navigation (Press Enter)</a></li>
+	<li><a class="ym-skip" href="#main">Skip to main content (Press Enter)</a></li>
+</ul>
+<div class="ym-wrapper"><div class="ym-wbox">
+ <header>
+	<h1>{{ site.title }}</h1>
+ </header>
+ <main>
+ <div class="ym-column">
+  <div class="ym-col1">
+   <div class="ym-cbox">
+    {{ content }}
+   </div>
+  </div>
+  <div class="ym-col3">
+   <div class="ym-cbox">
+    <h2>Foobar</h2>
+	<ul>
+	 {% for node in site.mypages %}
+	 <li><a href="{{site.baseurl}}{{node.url}}">{{node.name}}</a></li>
+	 {% endfor %}
+	</ul>
+   </div>
+  </div>
+ </div>
+ </main>
+ <footer>
+  <p>© github.com/maxymania 2014 &ndash; Layout based on <a href="http://www.yaml.de">YAML</a></p>
+ </footer>
+</div></div>
+</body>
+</html>

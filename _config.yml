@@ -1,1 +1,10 @@
-theme: jekyll-theme-minimal
+markdown: rdiscount
+pygments: true
+baseurl: /fnews
+title: FNews NNTP Server
+mypages:
+ - name: Home
+   url: /
+ - name: Blog
+   url: /blog.html
+
