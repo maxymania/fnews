@@ -7,4 +7,6 @@ mypages:
    url: /
  - name: Blog
    url: /blog.html
+ - name: Documentation
+   url: /docs/
 
