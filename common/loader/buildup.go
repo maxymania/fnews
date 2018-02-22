@@ -37,6 +37,11 @@ import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
 import "github.com/maxymania/fastnntp-polyglot-labs/util/groupadm"
 import "fmt"
 
+import (
+	"github.com/maxymania/fastnntp-polyglot/postauth"
+	"github.com/maxymania/fastnntp-polyglot-labs/groupdb/combined_db"
+)
+
 type ClientLoader func(bs *config.BucketServer) remote.HttpClient
 
 var ClientLoaders = map[string]ClientLoader{
@@ -66,10 +71,11 @@ func Create(a *config.ArticleBackendCfg, c *caps.Caps) {
 	c.ArticleGroupDB   = awrap
 	
 	switch a.Database.Schema {
-	case "","v1":{
+	case "v1":{ /* The old backend is deprecated. */
 			awrap.Bdb = &sqldb.Base{db}
 			sdb := &semigroupdb.Base{db}
 			c.GroupHeadCache   = &semigroupdb.AuthBase{*sdb,semigroupdb.ARUser}
+			c.GroupHeadCache   = &postauth.GroupHeadCacheAuthed{sdb,postauth.ARUser}
 			if a.Database.Driver=="postgresql" {
 				pdb := &semigroupdb.PgBase{*sdb}
 				c.GroupHeadDB      = pdb
@@ -81,6 +87,14 @@ func Create(a *config.ArticleBackendCfg, c *caps.Caps) {
 				c.GroupStaticDB    = sdb
 			}
 		}
+	case "","v2":{
+			mydb := &combined_db.Base{db}
+			awrap.Bdb = mydb
+			c.GroupHeadDB = mydb
+			c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{mydb,postauth.ARUser}
+			c.GroupRealtimeDB = mydb
+			c.GroupStaticDB = mydb
+		}
 	default:
 		panic(fmt.Errorf("unknown schema: %s",a.Database.Schema))
 	}
@@ -90,10 +104,14 @@ func SemiCreate(a *config.ArticleBackendCfg) ([]sqlutil.SqlModel,groupadm.GroupA
 	db,err := sql.Open(a.Database.Driver, a.Database.DataSource)
 	if err!=nil { return nil,nil,err }
 	switch a.Database.Schema {
-	case "","v1":{
+	case "v1":{ /* The old backend is deprecated. */
 			db1 := &sqldb.Base{db}
 			db2 := &semigroupdb.Base{db}
 			return []sqlutil.SqlModel{db1,db2},db2,nil
+		}
+	case "","v2":{
+			mydb := &combined_db.Base{db}
+			return []sqlutil.SqlModel{mydb},mydb,nil
 		}
 	}
 	
