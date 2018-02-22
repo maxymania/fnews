@@ -28,8 +28,8 @@ import "path/filepath"
 import "fmt"
 import "github.com/byte-mug/goconfig"
 import "github.com/maxymania/fnews/common/config"
-import "github.com/maxymania/fastnntp-polyglot-labs/articlewrap/sqldb"
-import "github.com/maxymania/fastnntp-polyglot-labs/groupdb/semigroupdb"
+import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
+import "github.com/maxymania/fastnntp-polyglot-labs/util/groupadm"
 import "github.com/maxymania/fastnntp-polyglot/caps"
 
 func loadConfig(cfgf string) (a *config.ArticleBackendCfg,e error) {
@@ -53,7 +53,7 @@ func LoadConfig(c *caps.Caps,cfgf string) (e error) {
 	return
 }
 
-func LoadConfigSemi(cfgf string) (s1 *sqldb.Base,s2 *semigroupdb.Base,e error) {
+func LoadConfigSemi(cfgf string) (s1 []sqlutil.SqlModel,s2 groupadm.GroupAdm,e error) {
 	defer func(){
 		p := recover()
 		if p==nil { return }

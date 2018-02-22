@@ -34,6 +34,7 @@ type BucketServer struct{
 type Database struct{
 	Driver     string `inn:"$driver"`
 	DataSource string `inn:"$data-source"`
+	Schema     string `inn:"$schema"`
 }
 
 type ArticleBackendCfg struct{
