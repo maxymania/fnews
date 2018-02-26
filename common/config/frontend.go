@@ -21,18 +21,15 @@ SOFTWARE.
 */
 
 
-package main
+package config
 
-import "fmt"
-import "github.com/maxymania/fnews/common/bktstor_d"
-import _ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfile"
-import _ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfilemulti"
-
-// go build github.com/maxymania/fnews/win/fnews_bktstor_run
-
-func main() {
-	lc := bktstor_d.NewLifecycle()
-	e := lc.LoadAndServe()
-	if e!=nil { fmt.Println(e) }
+type NntpListener struct {
+	Listen    string `inn:"$listen"`
+	IpVersion int    `inn:"$ip-version"`
 }
+
+type ServerFrontendCfg struct {
+	Listeners []NntpListener `inn:"@listen"`
+}
+
 

@@ -27,8 +27,6 @@ import "github.com/maxymania/fnews/common/win"
 import (
 	"github.com/hashicorp/memberlist"
 	"github.com/maxymania/fnews/common/loaderclust"
-	_ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfile"
-	_ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfilemulti"
 )
 
 type Lifecycle struct{

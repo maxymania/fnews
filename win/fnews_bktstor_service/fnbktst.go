@@ -26,6 +26,8 @@ package main
 import "fmt"
 import "github.com/maxymania/fnews/common/bktstor_d"
 import "golang.org/x/sys/windows/svc"
+import _ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfile"
+import _ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfilemulti"
 
 // go build github.com/maxymania/fnews/win/fnews_bktstor_service
 

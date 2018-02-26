@@ -28,15 +28,23 @@ import "time"
 
 import "github.com/maxymania/fnews/common/win"
 import "github.com/maxymania/fnews/common/loader"
+import "github.com/maxymania/fnews/common/config"
 import "github.com/byte-mug/fastnntp"
 import "github.com/byte-mug/fastnntp/posting"
 import "github.com/maxymania/fastnntp-polyglot/caps"
 
-import _ "github.com/lib/pq"
-import _ "github.com/maxymania/fnews/common/loader/oohttp"
-import _ "github.com/maxymania/fnews/common/loader/kcphttp"
+import "io/ioutil"
+import "path/filepath"
+import "github.com/byte-mug/goconfig"
+import "sync"
 
-// go build github.com/maxymania/fnews/win/fnews_run
+func loadConfig(cfgf string) (a *config.ServerFrontendCfg,e error) {
+	data,err := ioutil.ReadFile(filepath.Join(cfgf,"fnews.conf"))
+	if err!=nil { e = err; return }
+	a = new(config.ServerFrontendCfg)
+	e = goconfig.Parse(data,goconfig.CreateReflectHandler(a))
+	return
+}
 
 type Lifecycle struct{
 	cfgf string
@@ -45,6 +53,11 @@ type Lifecycle struct{
 func NewLifecycle() (l *Lifecycle) {
 	l = new(Lifecycle)
 	l.cfgf = win.FindEtcConfig()
+	return
+}
+func NewLifecycleStore(cfgf string) (l *Lifecycle) {
+	l = new(Lifecycle)
+	l.cfgf = cfgf
 	return
 }
 
@@ -64,18 +77,36 @@ func (l *Lifecycle) Load() error {
 }
 
 
-func mainBolt(h *fastnntp.Handler, n net.Listener) {
+func mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup, n net.Listener) {
 	for {
 		conn,err := n.Accept()
 		if err!=nil { time.Sleep(time.Second) }
 		go h.ServeConn(conn)
 	}
 }
-func (l *Lifecycle) Serve() error {
-	lis,err := net.Listen("tcp",":63119")
+func perform(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) error {
+	nwi := "tcp"
+	switch lst.IpVersion {
+	case 4: nwi = "tcp4"
+	case 6: nwi = "tcp6"
+	}
+	
+	lis,err := net.Listen(nwi,lst.Listen)
 	if err!=nil { return err }
-	mainBolt(l.h,lis)
+	
+	wg.Add(1)
+	go mainBolt(h,lst,wg,lis)
 	return nil
 }
 
+func (l *Lifecycle) Serve() error {
+	wg := new(sync.WaitGroup)
+	cfg,err := loadConfig(l.cfgf)
+	if err!=nil { return err }
+	for i := range cfg.Listeners {
+		perform(l.h,&(cfg.Listeners[i]),wg)
+	}
+	wg.Wait()
+	return nil
+}
 
