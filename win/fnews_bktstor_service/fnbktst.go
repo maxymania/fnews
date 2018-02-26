@@ -55,7 +55,11 @@ func (_ service) Execute(args []string, r <-chan svc.ChangeRequest, changes chan
 
 func main() {
 	isOK,err := svc.IsAnInteractiveSession()
-	if err!=nil || !isOK { return }
+	if err!=nil || isOK {
+		fmt.Println("Running in interactive mode")
+		doserve()
+		return
+	}
 	svc.Run("fnews_bktstor_service",service{})
 }
 

@@ -26,6 +26,8 @@ package config
 type NntpListener struct {
 	Listen    string `inn:"$listen"`
 	IpVersion int    `inn:"$ip-version"`
+	HopLimit  int    `inn:"$hop-limit"`
+	DscpValue string `inn:"$dscp"`
 }
 
 type ServerFrontendCfg struct {

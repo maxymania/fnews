@@ -28,6 +28,7 @@ import "time"
 
 import "github.com/maxymania/fnews/common/win"
 import "github.com/maxymania/fnews/common/loader"
+import "github.com/maxymania/fnews/common/loaderlst"
 import "github.com/maxymania/fnews/common/config"
 import "github.com/byte-mug/fastnntp"
 import "github.com/byte-mug/fastnntp/posting"
@@ -76,9 +77,14 @@ func (l *Lifecycle) Load() error {
 	return nil
 }
 
+type handling struct{
+	lis net.Listener
+	mod loaderlst.Modifier
+}
 
-func mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup, n net.Listener) {
+func (tht handling) mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) {
 	defer wg.Done()
+	n := tht.lis
 	for {
 		conn,err := n.Accept()
 		if err!=nil { time.Sleep(time.Second) }
@@ -96,7 +102,10 @@ func perform(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) 
 	if err!=nil { return err }
 	
 	wg.Add(1)
-	go mainBolt(h,lst,wg,lis)
+	
+	go handling{
+		lis: lis,
+	}.mainBolt(h,lst,wg)
 	return nil
 }
 
