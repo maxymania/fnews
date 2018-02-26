@@ -27,7 +27,7 @@ CS1|001 000|0x08|8|Priority
 CS2|010 000|0x10|16|Immediate
 CS3|011 000|0x18|24|Flash - mainly used for voice signaling
 CS4|100 000|0x20|32|Flash Override
-CS5|101 000|0x28|40|Criticyl - mainly used for voice RTP
+CS5|101 000|0x28|40|Critical - mainly used for voice RTP
 CS6|110 000|0x30|48|Internetwork Control
 CS7|111 000|0x38|56|Network Control
 AF11|001 010|0x0a|10|Assured Forwarding
