@@ -78,6 +78,7 @@ func (l *Lifecycle) Load() error {
 
 
 func mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup, n net.Listener) {
+	defer wg.Done()
 	for {
 		conn,err := n.Accept()
 		if err!=nil { time.Sleep(time.Second) }
