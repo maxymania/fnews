@@ -21,28 +21,30 @@ SOFTWARE.
 */
 
 
-package config
+package loaderlst
 
-type NntpTlsCert struct{
-	Crt string `inn:"$crt"`
-	Key string `inn:"$key"`
-}
-type NntpTlsConfig struct{
-	Crts []NntpTlsCert `inn:"@crt"`
-}
+import "github.com/maxymania/fnews/common/config"
+//import "net"
+import "crypto/tls"
+import "path/filepath"
+import "strings"
 
-type NntpListener struct {
-	Listen    string `inn:"$listen"`
-	IpVersion int    `inn:"$ip-version"`
-	HopLimit  int    `inn:"$hop-limit"`
-	DscpValue string `inn:"$dscp"`
+var seperator = string([]byte{filepath.Separator})
+
+func GetTLS(cfg *config.NntpListener) (*tls.Config,error) {
+	tc := cfg.TlsConfig
+	if tc==nil { return nil,nil }
 	
-	TlsConfig *NntpTlsConfig `inn:"$tls!"`
-	EnableTls bool   `inn:"$enable-tls"`
+	tcf := &tls.Config{}
+	
+	tcf.Certificates = make([]tls.Certificate,len(tc.Crts))
+	for i,crcf := range tc.Crts {
+		crt := strings.Replace(crcf.Crt,"/",seperator,-1)
+		key := strings.Replace(crcf.Key,"/",seperator,-1)
+		cert,err := tls.LoadX509KeyPair(crt,key)
+		if err!=nil { return nil,err }
+		tcf.Certificates[i] = cert
+	}
+	
+	return tcf,nil
 }
-
-type ServerFrontendCfg struct {
-	Listeners []NntpListener `inn:"@listen"`
-}
-
-

@@ -38,6 +38,7 @@ import "io/ioutil"
 import "path/filepath"
 import "github.com/byte-mug/goconfig"
 import "sync"
+import "crypto/tls"
 
 func loadConfig(cfgf string) (a *config.ServerFrontendCfg,e error) {
 	data,err := ioutil.ReadFile(filepath.Join(cfgf,"fnews.conf"))
@@ -80,6 +81,7 @@ func (l *Lifecycle) Load() error {
 type handling struct{
 	lis net.Listener
 	mod loaderlst.Modifier
+	tcf *tls.Config
 }
 
 func (tht handling) mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) {
@@ -89,6 +91,9 @@ func (tht handling) mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *
 		conn,err := n.Accept()
 		if err!=nil { time.Sleep(time.Second); continue }
 		tht.mod.ModifySocket(conn)
+		if lst.EnableTls {
+			conn = tls.Server(conn,tht.tcf)
+		}
 		go h.ServeConn(conn)
 	}
 }
@@ -98,6 +103,8 @@ func perform(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) 
 	case 4: nwi = "tcp4"
 	case 6: nwi = "tcp6"
 	}
+	
+	tcf,err := loaderlst.GetTLS(lst)
 	
 	lis,err := net.Listen(nwi,lst.Listen)
 	if err!=nil { return err }
@@ -109,6 +116,7 @@ func perform(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) 
 	go handling{
 		lis: lis,
 		mod: mod,
+		tcf: tcf,
 	}.mainBolt(h,lst,wg)
 	return nil
 }
