@@ -46,3 +46,15 @@ A `listen` Entry has the following keys:
   If neither *IPv4-Only* nor *IPv6-Only* is desired, use any other value (must be a number, or server won't start) or
   don't specify this key.
 
+* __*hop-limit*__
+
+  Specifies the Hop-Limit (aka. TTL in IPv4) of the outgoing IP packets. The hop limit, must
+  be `1 <= value <= 255` when specifying. Otherwise, it will be ignored.
+
+* __*dscp*__
+
+  Specifies the DSCP bits of the Traffic-Class (IPv6) or TOS (IPv4) field.
+  It must be eighter a decimal or hexadecimal integer, or a name of a [DSCP constant](../docs_info/traffic_class).
+  Valid values are `0 <= value <= 63`. If the value is `0` or `CF0`, and might be overridden by the Operating System
+  or the network equipment.
+
