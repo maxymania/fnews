@@ -87,7 +87,8 @@ func (tht handling) mainBolt(h *fastnntp.Handler, lst *config.NntpListener, wg *
 	n := tht.lis
 	for {
 		conn,err := n.Accept()
-		if err!=nil { time.Sleep(time.Second) }
+		if err!=nil { time.Sleep(time.Second); continue }
+		tht.mod.ModifySocket(conn)
 		go h.ServeConn(conn)
 	}
 }
@@ -101,10 +102,13 @@ func perform(h *fastnntp.Handler, lst *config.NntpListener, wg *sync.WaitGroup) 
 	lis,err := net.Listen(nwi,lst.Listen)
 	if err!=nil { return err }
 	
+	mod := loaderlst.GetModifier(lst)
+	
 	wg.Add(1)
 	
 	go handling{
 		lis: lis,
+		mod: mod,
 	}.mainBolt(h,lst,wg)
 	return nil
 }

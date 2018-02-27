@@ -44,25 +44,16 @@ type modifier struct{
 var _ Modifier = modifier{}
 
 func (m modifier) ModifySocket(sck net.Conn) {
-	var i net.IP
-	if ipa,ok := sck.RemoteAddr().(*net.IPAddr) ; ok { i = ipa.IP }
-	if i.To4()==nil {
-		c := ipv6.NewConn(sck)
-		if m.hopLimit!=0 { c.SetHopLimit(m.hopLimit) }
-		if m.dscp!=0 { c.SetTrafficClass(m.dscp<<2) }
-	} else {
-		c := ipv4.NewConn(sck)
-		if m.hopLimit!=0 { c.SetTTL(m.hopLimit) }
-		if m.dscp!=0 { c.SetTOS(m.dscp<<2) }
+	c4 := ipv4.NewConn(sck)
+	c6 := ipv6.NewConn(sck)
+	if v := m.hopLimit; 1 <= v && v <=255  {
+		if c4!=nil { c4.SetTTL(m.hopLimit) }
+		if c6!=nil { c6.SetHopLimit(m.hopLimit) }
 	}
-}
-
-func GetModifier(cfg *config.NntpListener) Modifier {
-	var m modifier
-	m.hopLimit = cfg.HopLimit
-	m.dscp = dscp2int(cfg.DscpValue)
-	if m.hopLimit!=0 || m.dscp!=0 { return m }
-	return defModifier
+	if v := m.dscp<<2; 1 <= v && v <=255 {
+		if c4!=nil { c4.SetTOS(m.dscp<<2) }
+		if c6!=nil { c6.SetTrafficClass(m.dscp<<2) }
+	}
 }
 
 func dscp2int(s string) int{
@@ -94,4 +85,11 @@ func dscp2int(s string) int{
 	return int(u)
 }
 
+func GetModifier(cfg *config.NntpListener) Modifier {
+	var m modifier
+	m.hopLimit = cfg.HopLimit
+	m.dscp = dscp2int(cfg.DscpValue)
+	if m.hopLimit!=0 || m.dscp!=0 { return m }
+	return defModifier
+}
 
