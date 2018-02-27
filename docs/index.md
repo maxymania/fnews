@@ -11,6 +11,6 @@ Configuration files for the Bucketstore:
 
 Configuration files for the Bucketstore:
 - [fnews.conf](./fnews-doc) : The frontend configuration data for FNews services ([example](./fnews.conf))
-- [backend.conf](./backend-doc) : Configuration of the BucketStore service ([example](./backend.conf))
+- [backend.conf](./backend-doc) : The backend configuration data for FNews services ([example](./backend.conf))
 
 
