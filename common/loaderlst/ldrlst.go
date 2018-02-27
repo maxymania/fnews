@@ -47,12 +47,12 @@ func (m modifier) ModifySocket(sck net.Conn) {
 	c4 := ipv4.NewConn(sck)
 	c6 := ipv6.NewConn(sck)
 	if v := m.hopLimit; 1 <= v && v <=255  {
-		if c4!=nil { c4.SetTTL(m.hopLimit) }
-		if c6!=nil { c6.SetHopLimit(m.hopLimit) }
+		if c4!=nil { c4.SetTTL(v) }
+		if c6!=nil { c6.SetHopLimit(v) }
 	}
 	if v := m.dscp<<2; 1 <= v && v <=255 {
-		if c4!=nil { c4.SetTOS(m.dscp<<2) }
-		if c6!=nil { c6.SetTrafficClass(m.dscp<<2) }
+		if c4!=nil { c4.SetTOS(v) }
+		if c6!=nil { c6.SetTrafficClass(v) }
 	}
 }
 
