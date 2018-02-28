@@ -33,6 +33,7 @@ import "github.com/maxymania/fnews/common/config"
 import "github.com/byte-mug/fastnntp"
 import "github.com/byte-mug/fastnntp/posting"
 import "github.com/maxymania/fastnntp-polyglot/caps"
+import "github.com/maxymania/fnews/common/loaderauth"
 
 import "io/ioutil"
 import "path/filepath"
@@ -75,6 +76,8 @@ func (l *Lifecycle) Load() error {
 		GroupListingCaps:c,
 		//LoginCaps:adb,
 	}
+	e = loaderauth.LoadConfig(c,l.h,l.cfgf)
+	if e!=nil { return e }
 	return nil
 }
 
