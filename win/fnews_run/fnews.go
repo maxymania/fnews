@@ -25,6 +25,9 @@ package main
 
 import "fmt"
 import "github.com/maxymania/fnews/common/fnewsd"
+import _ "github.com/maxymania/fnews/common/loader/cass"
+import _ "github.com/maxymania/fnews/common/loader/postgres"
+
 
 // go build github.com/maxymania/fnews/win/fnews_run
 
