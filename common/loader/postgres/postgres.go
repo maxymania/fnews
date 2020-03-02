@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,39 +21,28 @@ SOFTWARE.
 */
 
 
-package bktstor_d
+package postgres
 
-import "github.com/maxymania/fnews/common/win"
-import (
-	"github.com/hashicorp/memberlist"
-	"github.com/maxymania/fnews/common/loaderclust"
-)
+import "database/sql"
+import "github.com/maxymania/fastnntp-polyglot"
 
-type Lifecycle struct{
-	cfgf string
+import "github.com/maxymania/fastnntp-polyglot/gold/gh.postgres"
+import "github.com/maxymania/fastnntp-polyglot/gold/gh.generic"
+
+import "github.com/maxymania/fnews/common/loader"
+import "github.com/maxymania/fnews/common/config"
+
+func loadGH(bs *config.GroupHead) (newspolyglot.GroupHeadDB,error) {
+	db,err := sql.Open("postgres", bs.Dburl)
+	if err!=nil { return nil,err }
+	pba := &postgres.PsqlBulkAllocator{db}
+	pba.Init()
+	req := generic.NewRequester(pba,128)
+	return &generic.Frontend{req},nil
 }
 
-func NewLifecycle() (l *Lifecycle) {
-	l = new(Lifecycle)
-	l.cfgf = win.FindEtcConfig()
-	return
-}
-func NewLifecycleStore(cfgf string) (l *Lifecycle) {
-	l = new(Lifecycle)
-	l.cfgf = cfgf
-	return
+func init() {
+	loader.GroupHeadDBLoaders["postgres"] = loadGH
 }
 
-func (l *Lifecycle) LoadAndServe() error {
-	cfg,memb,e := loaderclust.LoadConfig(l.cfgf)
-	if e!=nil { return e }
-	if cfg.Cluster!=nil {
-		mlc,e := loaderclust.CreateClusterConfig(cfg.Cluster,memb)
-		if e!=nil { return e }
-		ml ,e := memberlist.Create(mlc)
-		if e!=nil { return e }
-		loaderclust.CreateCluster(cfg.Cluster,ml)
-	}
-	loaderclust.ListenAndServe(cfg,memb)
-	return nil
-}
+// #

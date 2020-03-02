@@ -38,18 +38,22 @@ func (ks *Keyspace) KSKey() string { return ks.Keyspace+ks.Cluster }
 type ArticleDirect struct{
 	Method string `inn:"$store"`
 	Keyspace *Keyspace `inn:"$keyspace"`
+	Dburl  string `inn:"$dburl"`
 }
 type ArticleGroup struct{
 	Method string `inn:"$groupindex"`
 	Keyspace *Keyspace `inn:"$keyspace"`
+	Dburl  string `inn:"$dburl"`
 }
 type GroupList struct {
 	Method string `inn:"$grouplist"`
 	Keyspace *Keyspace `inn:"$keyspace"`
+	Dburl  string `inn:"$dburl"`
 }
 type GroupHead struct {
 	Method string `inn:"$grouphead"`
 	Keyspace *Keyspace `inn:"$keyspace"`
+	Dburl  string `inn:"$dburl"`
 }
 
 type ArticleBackendCfg struct{
