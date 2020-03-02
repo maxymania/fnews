@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,19 +24,21 @@ SOFTWARE.
 package loaderauth
 
 import (
-	"database/sql"
 	"fmt"
 	
 	"github.com/byte-mug/fastnntp"
 	"github.com/maxymania/fnews/common/config"
 	
+	"github.com/gocql/gocql"
+	
 	"github.com/maxymania/fastnntp-polyglot/caps"
 	"github.com/maxymania/fastnntp-polyglot/postauth"
-	"github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
-	"github.com/maxymania/fastnntp-polyglot-labs/auth/sqlauth"
-	"github.com/maxymania/fastnntp-polyglot-labs/auth/advauth"
-	"github.com/maxymania/fastnntp-polyglot-labs/auth/advauthif"
+	"github.com/maxymania/fastnntp-polyglot/postauth/advauth"
+	"github.com/maxymania/fastnntp-polyglot/postauth/advauthif"
+	"github.com/maxymania/fastnntp-polyglot/auth/cassauth"
 )
+
+var NoAuth = fmt.Errorf("No auth.")
 
 type LoginAdm interface {
 	InsertUser(user, password []byte,rank postauth.AuthRank) error
@@ -44,7 +46,28 @@ type LoginAdm interface {
 	UpdateUserRank(user []byte, rank postauth.AuthRank) error
 }
 
+func Open(a *config.AuthCfg) (advauth.LoginHook,error) {
+	if a==nil { return nil,NoAuth }
+	if !a.Enable { return nil,NoAuth }
+	if a.Method==nil { return nil,NoAuth }
+	
+	switch a.Method.Method {
+	case "cass","cassandra","cql": {
+			cluster := gocql.NewCluster(a.Method.Hosts...)
+			cluster.Keyspace = a.Method.Dbname
+			session,err := cluster.CreateSession()
+			if err!=nil { return nil,err }
+			lh := &cassauth.CassLoginHook{DB:session}
+			err = lh.InitHash(a.Method.Pwhash)
+			if err!=nil { return nil,err }
+			return lh,nil
+		}
+	}
+	return nil,fmt.Errorf("unknown METHOD: %s",a.Method.Method)
+}
+
 func Create(a *config.AuthCfg, c *caps.Caps, h *fastnntp.Handler) {
+	var err error
 	if a==nil { return }
 	if !a.Enable { return }
 	if a.Method==nil { return }
@@ -52,29 +75,29 @@ func Create(a *config.AuthCfg, c *caps.Caps, h *fastnntp.Handler) {
 	auther := new(advauth.Auther)
 	auther.Base = h
 	
-	switch a.Method.Method {
-	case "db":{
-			db,err := sql.Open(a.Method.Driver, a.Method.Db)
-			if err!=nil { panic(err) }
-			auther.Hook = &sqlauth.LoginDB{db}
-		}
-	default:
-		panic(fmt.Errorf("unknown METHOD: %s",a.Method.Method))
-	}
+	auther.Hook,err = Open(a)
+	if err!=nil { panic(err) }
 	
-	auther.Deriv = &advauthif.Deriver{Caps:c,Ghead: advauthif.ExtractGhead(c)}
+	gch := advauthif.ExtractGhead(c)
+	auther.Deriv = &advauthif.Deriver{Caps:c,Ghead:gch }
 	
 	if a.NoAuth.NoReading {
 		*h = fastnntp.Handler{} // Clear handler to prevent reading.
 	} else if !a.NoAuth.NoPosting { /* Unauthenticated Posting is disabled by default. */
-		/* TODO: implement, enable. */
-		
+		// Default to ARUser
+		c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{gch,postauth.ARUser}
 	}
 	
 	h.LoginCaps = auther
 }
 
-func SemiCreate(a *config.AuthCfg) ([]sqlutil.SqlModel,LoginAdm,error) {
+type FakeSqlModel interface {
+    CreateSqlModel(d interface{}) error
+}
+func SemiCreate(a *config.AuthCfg) ([]FakeSqlModel,LoginAdm,error) {
+	adm,err := Open(a)
+	return nil,adm,err
+	/*
 	switch a.Method.Method {
 	case "db":{
 			db,err := sql.Open(a.Method.Driver, a.Method.Db)
@@ -84,6 +107,7 @@ func SemiCreate(a *config.AuthCfg) ([]sqlutil.SqlModel,LoginAdm,error) {
 		}
 	}
 	return nil,nil,fmt.Errorf("unknown METHOD: %s",a.Method.Method)
+	*/
 }
 
 

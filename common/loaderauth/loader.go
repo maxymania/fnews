@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@ import "fmt"
 import "github.com/byte-mug/fastnntp"
 import "github.com/byte-mug/goconfig"
 import "github.com/maxymania/fnews/common/config"
-import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
 import "github.com/maxymania/fastnntp-polyglot/caps"
 import "os"
 
@@ -58,7 +57,7 @@ func LoadConfig(c *caps.Caps, h *fastnntp.Handler,cfgf string) (e error) {
 	return
 }
 
-func LoadConfigSemi(cfgf string) (s1 []sqlutil.SqlModel,s2 LoginAdm,e error) {
+func LoadConfigSemi(cfgf string) (s1 []FakeSqlModel,s2 LoginAdm,e error) {
 	defer func(){
 		p := recover()
 		if p==nil { return }

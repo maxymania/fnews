@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2018,2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,6 @@ import "path/filepath"
 import "fmt"
 import "github.com/byte-mug/goconfig"
 import "github.com/maxymania/fnews/common/config"
-import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
-import "github.com/maxymania/fastnntp-polyglot-labs/util/groupadm"
 import "github.com/maxymania/fastnntp-polyglot/caps"
 
 func loadConfig(cfgf string) (a *config.ArticleBackendCfg,e error) {
@@ -53,13 +51,7 @@ func LoadConfig(c *caps.Caps,cfgf string) (e error) {
 	return
 }
 
-func LoadConfigSemi(cfgf string) (s1 []sqlutil.SqlModel,s2 groupadm.GroupAdm,e error) {
-	defer func(){
-		p := recover()
-		if p==nil { return }
-		if f,ok := p.(error) ; ok { e = f; return }
-		e = fmt.Errorf("%v",p)
-	}()
+func LoadConfigSemi(cfgf string) (s1 []FakeSqlModel,s2 *Backends,e error) {
 	a,err := loadConfig(cfgf)
 	if err!=nil { e = err; return }
 	s1,s2,e = SemiCreate(a)

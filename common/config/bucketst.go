@@ -23,6 +23,7 @@ SOFTWARE.
 
 package config
 
+/*
 import "github.com/maxymania/fastnntp-polyglot-labs/bucketstore"
 
 type BucketBackend struct{
@@ -58,4 +59,4 @@ type BucketServiceCfg struct{
 	OuterSvc []BucketServiceListener `inn:"@server!"`
 	Cluster   *BucketCluster         `inn:"$cluster!"`
 }
-
+*/

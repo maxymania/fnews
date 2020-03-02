@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2018,2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,98 +24,103 @@ SOFTWARE.
 package loader
 
 import "github.com/maxymania/fnews/common/config"
-import "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/remote"
-import "github.com/maxymania/fastnntp-polyglot-labs/articlewrap"
-import "database/sql"
-import "github.com/maxymania/fastnntp-polyglot-labs/articlewrap/sqldb"
-import "github.com/maxymania/fastnntp-polyglot-labs/groupdb/semigroupdb"
 import "github.com/maxymania/fastnntp-polyglot/caps"
 
-import "github.com/valyala/fasthttp"
-import "net"
-import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
-import "github.com/maxymania/fastnntp-polyglot-labs/util/groupadm"
 import "fmt"
 
-import (
-	"github.com/maxymania/fastnntp-polyglot/postauth"
-	"github.com/maxymania/fastnntp-polyglot-labs/groupdb/combined_db"
-)
+import "github.com/maxymania/fastnntp-polyglot"
+import "github.com/maxymania/fastnntp-polyglot/gold"
+import "github.com/maxymania/fastnntp-polyglot/gold/setup"
+import "github.com/maxymania/fastnntp-polyglot/postauth"
 
-type ClientLoader func(bs *config.BucketServer) remote.HttpClient
+import "time"
 
-var ClientLoaders = map[string]ClientLoader{
-	"http":ccHttp,
+type ArticleDirectLoader func(bs *config.ArticleDirect) (gold.ArticleDirectEX,error)
+var ArticleDirectLoaders = make(map[string]ArticleDirectLoader)
+
+type ArticleGroupLoader func(bs *config.ArticleGroup) (gold.ArticleGroupEX,error)
+var ArticleGroupLoaders = make(map[string]ArticleGroupLoader)
+
+type GroupListLoader func(bs *config.GroupList) (gold.GroupListDB,error)
+var GroupListLoaders = make(map[string]GroupListLoader)
+
+type GroupHeadDBLoader func(bs *config.GroupHead) (newspolyglot.GroupHeadDB,error)
+var GroupHeadDBLoaders = make(map[string]GroupHeadDBLoader)
+
+func assert2(ok bool,err string) {
+	if !ok { panic(err) }
+}
+func failon(err error) {
+	if err!=nil { panic(err) }
 }
 
-func dial(s string) (net.Conn,error) { return net.Dial("tcp",s) }
-
-func ccHttp(bs *config.BucketServer) remote.HttpClient {
-	hc := &fasthttp.HostClient{Addr: bs.Address}
-	
-	hc.Dial = dial
-	return hc
+type days int
+func (i days) DecideLite(groups [][]byte, lines, length int64) gold.PostingDecisionLite {
+	return gold.PostingDecisionLite{ExpireAt: time.Now().UTC().AddDate(0,0,int(i))}
 }
 
 func Create(a *config.ArticleBackendCfg, c *caps.Caps) {
-	awrap := new(articlewrap.ArticleDirectBackend)
-	proto := a.Bucket.Protocol
-	lfu,ok := ClientLoaders[proto]
-	if !ok { panic("unknown Client Loader: '"+proto+"'") }
-	hc := lfu(a.Bucket)
-	awrap.Store = remote.NewMultiClient(hc)
-	db,err := sql.Open(a.Database.Driver, a.Database.DataSource)
-	if err!=nil { panic(err) }
-	c.ArticlePostingDB = awrap
-	c.ArticleDirectDB  = awrap
-	c.ArticleGroupDB   = awrap
 	
-	switch a.Database.Schema {
-	case "v1":{ /* The old backend is deprecated. */
-			awrap.Bdb = &sqldb.Base{db}
-			sdb := &semigroupdb.Base{db}
-			c.GroupHeadCache   = &semigroupdb.AuthBase{*sdb,semigroupdb.ARUser}
-			c.GroupHeadCache   = &postauth.GroupHeadCacheAuthed{sdb,postauth.ARUser}
-			if a.Database.Driver=="postgresql" {
-				pdb := &semigroupdb.PgBase{*sdb}
-				c.GroupHeadDB      = pdb
-				c.GroupRealtimeDB  = pdb
-				c.GroupStaticDB    = pdb
-			} else {
-				c.GroupHeadDB      = sdb
-				c.GroupRealtimeDB  = sdb
-				c.GroupStaticDB    = sdb
-			}
-		}
-	case "","v2":{
-			mydb := &combined_db.Base{db}
-			awrap.Bdb = mydb
-			c.GroupHeadDB = mydb
-			c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{mydb,postauth.ARUser}
-			c.GroupRealtimeDB = mydb
-			c.GroupStaticDB = mydb
-		}
-	default:
-		panic(fmt.Errorf("unknown schema: %s",a.Database.Schema))
-	}
+	adl,ok := ArticleDirectLoaders[a.Store.Method]
+	assert2(ok,"unknown Article-Direct Backend: '"+a.Store.Method+"'")
+	agl,ok := ArticleGroupLoaders[a.GroupIdx.Method]
+	assert2(ok,"unknown Article-Group Backend: '"+a.GroupIdx.Method+"'")
+	gll,ok := GroupListLoaders[a.GroupLst.Method]
+	assert2(ok,"unknown Group-List Backend: '"+a.GroupLst.Method+"'")
+	ghl,ok := GroupHeadDBLoaders[a.GroupHead.Method]
+	assert2(ok,"unknown Group-Head-DB Backend: '"+a.GroupHead.Method+"'")
+	
+	ad,err := adl(a.Store)
+	failon(err)
+	ag,err := agl(a.GroupIdx)
+	failon(err)
+	gl,err := gll(a.GroupLst)
+	failon(err)
+	var pp gold.PostingPolicyLite = days(30)
+	
+	setup.Setup(c,ad,ag,gl,pp)
+	c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{gl,postauth.ARReader}
+	
+	gh,err := ghl(a.GroupHead)
+	failon(err)
+	c.GroupHeadDB = gh
 }
-
-func SemiCreate(a *config.ArticleBackendCfg) ([]sqlutil.SqlModel,groupadm.GroupAdm,error) {
-	db,err := sql.Open(a.Database.Driver, a.Database.DataSource)
-	if err!=nil { return nil,nil,err }
-	switch a.Database.Schema {
-	case "v1":{ /* The old backend is deprecated. */
-			db1 := &sqldb.Base{db}
-			db2 := &semigroupdb.Base{db}
-			return []sqlutil.SqlModel{db1,db2},db2,nil
-		}
-	case "","v2":{
-			mydb := &combined_db.Base{db}
-			return []sqlutil.SqlModel{mydb},mydb,nil
-		}
-	}
+type FakeSqlModel interface {
+    CreateSqlModel(d interface{}) error
+}
+type Backends struct {
+	gold.ArticleDirectEX
+	gold.ArticleGroupEX
+	gold.GroupListDB
+	newspolyglot.GroupHeadDB
+}
+func SemiCreate(a *config.ArticleBackendCfg) (r1 []FakeSqlModel,r2 *Backends,e error) {
+	defer func(){
+		p := recover()
+		if p==nil { return }
+		if f,ok := p.(error) ; ok { e = f; return }
+		e = fmt.Errorf("%v",p)
+	}()
 	
-	return nil,nil,fmt.Errorf("unknown schema: %s",a.Database.Schema)
+	adl,ok := ArticleDirectLoaders[a.Store.Method]
+	assert2(ok,"unknown Article-Direct Backend: '"+a.Store.Method+"'")
+	agl,ok := ArticleGroupLoaders[a.GroupIdx.Method]
+	assert2(ok,"unknown Article-Group Backend: '"+a.GroupIdx.Method+"'")
+	gll,ok := GroupListLoaders[a.GroupLst.Method]
+	assert2(ok,"unknown Group-List Backend: '"+a.GroupLst.Method+"'")
+	ghl,ok := GroupHeadDBLoaders[a.GroupHead.Method]
+	assert2(ok,"unknown Group-Head-DB Backend: '"+a.GroupHead.Method+"'")
+	
+	ad,err := adl(a.Store)
+	failon(err)
+	ag,err := agl(a.GroupIdx)
+	failon(err)
+	gl,err := gll(a.GroupLst)
+	failon(err)
+	gh,err := ghl(a.GroupHead)
+	failon(err)
+	
+	return nil,&Backends{ad,ag,gl,gh},nil
 }
 
 

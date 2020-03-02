@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2018,2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,18 +21,4 @@ SOFTWARE.
 */
 
 
-package main
-
-import "fmt"
-import "github.com/maxymania/fnews/common/bktstor_d"
-import _ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfile"
-import _ "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/dayfilemulti"
-
-// go build github.com/maxymania/fnews/win/fnews_bktstor_run
-
-func main() {
-	lc := bktstor_d.NewLifecycle()
-	e := lc.LoadAndServe()
-	if e!=nil { fmt.Println(e) }
-}
-
+package loader

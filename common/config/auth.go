@@ -24,9 +24,10 @@ SOFTWARE.
 package config
 
 type AuthMethod struct {
-	Method string `inn:"$method"`
-	Db     string `inn:"$db"`
-	Driver string `inn:"$driver"`
+	Method string   `inn:"$method"`
+	Pwhash string   `inn:"$pwd-hash"`
+	Hosts  []string `inn:"@host"`
+	Dbname string   `inn:"$dbname"`
 }
 
 type AuthNoAuth struct {

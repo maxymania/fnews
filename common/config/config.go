@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2018,2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,24 +23,40 @@ SOFTWARE.
 
 package config
 
-type BucketServer struct{
-	Protocol     string `inn:"$proto"`
-	DataShards   int    `inn:"$data-shards"`
-	ParityShards int    `inn:"$parity-shards"`
-	TurboMode    bool   `inn:"$turbo"`
-	Address      string `inn:"$address"`
+type Keyspace struct{
+	Keyspace string `inn:"$keyspace"`
+	Cluster  string `inn:"$cluster"`
+	Hosts  []string `inn:"@host"`
+	Username string `inn:"$user"`
+	Password string `inn:"$pass"`
+	
+	WriteCs1 string `inn:"$write-consistency"`
+	WriteCs2 string `inn:"$atomic-consistency"`
 }
+func (ks *Keyspace) KSKey() string { return ks.Keyspace+ks.Cluster }
 
-type Database struct{
-	Driver     string `inn:"$driver"`
-	DataSource string `inn:"$data-source"`
-	Schema     string `inn:"$schema"`
+type ArticleDirect struct{
+	Method string `inn:"$store"`
+	Keyspace *Keyspace `inn:"$keyspace"`
+}
+type ArticleGroup struct{
+	Method string `inn:"$groupindex"`
+	Keyspace *Keyspace `inn:"$keyspace"`
+}
+type GroupList struct {
+	Method string `inn:"$grouplist"`
+	Keyspace *Keyspace `inn:"$keyspace"`
+}
+type GroupHead struct {
+	Method string `inn:"$grouphead"`
+	Keyspace *Keyspace `inn:"$keyspace"`
 }
 
 type ArticleBackendCfg struct{
-	Bucket *BucketServer `inn:"$bucket"`
-	Database *Database   `inn:"$db"`
+	Store     *ArticleDirect `inn:"$store"`
+	GroupIdx  *ArticleGroup  `inn:"$groupindex"`
+	GroupLst  *GroupList     `inn:"$grouplist"`
+	GroupHead *GroupHead     `inn:"$grouphead"`
 }
 
-
-
+// #
