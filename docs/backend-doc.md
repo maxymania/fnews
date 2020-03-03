@@ -6,71 +6,118 @@ title: backend.conf
 # {{page.title}}
 Configuration of the FNews service news storage backend
 
-## Configuring the BucketStore-Access
+### The article storage
 
-In order for FNews to work, we need a BucketStore. To connect to it, we specify a `bucket` Entry.
+The configuration file must contain a `store` entry in order to be valid.
+This entry specifies, how, and where FNews stores xover, header and body of an article.
 
 ```
-bucket {
-	address: localhost:62092
-	proto: kcphttp
-	data-shards: 10
-	parity-shards: 3
-	turbo: true
+store <methodname> {
+	# body
 }
 ```
 
-A `bucket` Entry has the following keys:
+`<methodname>` is the name of a storage method for articles. Currently available storage methods are:
 
-* __*proto*__
+* __*cass*__
 
-  The Protocol that is used for communication. Must be one of __*http*__, __*oohttp*__ or __*kcphttp*__.
-  With __*http*__, the server implements Plain HTTP/1.1. With __*oohttp*__, the server implements an
-  out-of-order protocol, that encapsulates HTTP/1.1 requests. With __*kcphttp*__, the server implements
-  an out-of-order protocol, that encapsulates HTTP/1.1 requests and is built upon KCP, which in turn
-  is built upon UDP, thus offering superior performance.
+  Uses Apache Cassandra as storage backend. Requires a contained `keyspace`-Entry, see [below](#keyspace).
 
-* __*address*__
+### The article-to-group assignment.
 
-  The `<host>:<port>` Pair of the Bucket-Server.
-
-* __*data-shards*__
-
-  The number of data shards in KCP's reed-solomon encoding. Only useful if __*proto*__ is __*kcphttp*__.
-
-* __*parity-shards*__
-
-  The number of parity shards in KCP's reed-solomon encoding. Only useful if __*proto*__ is __*kcphttp*__.
-
-* __*turbo*__
-
-  If __*true*__, KCP is switched into, what i call, Turbo-Mode, which reduces KCPs CPU-overhead.
-
-## Configuring the Database
-
-FNews requires a Database to function. For this, a  `db` Entry.
+The configuration file must contain a `groupindex` entry in order to be valid.
+This entry specifies, how, and where FNews assigns articles to `newsgroup+number` pairs.
 
 ```
-db {
-	driver: postgres
-	data-source: "user=usr password=pwd dbname=mydatabase sslmode=disable"
-	schema: v2
+groupindex <methodname> {
+	# body
 }
 ```
 
-The `db`Entry has the following keys:
+`<methodname>` is the name of a storage method for article-to-group assignments. Currently available storage methods are:
 
-* __*driver*__
+* __*cass*__
 
-  The database driver, to connect to the database. Currently, only __*postgres*__ (PostgreSQL) is supported.
+  Uses Apache Cassandra as storage backend. Requires a contained `keyspace`-Entry, see [below](#keyspace).
 
-* __*data-source*__
+### The newsgroups+description+status storage.
 
-  The database connection string.
-  The format for connection strings for the __*postgres*__ driver: [lib/pq](https://godoc.org/github.com/lib/pq)
+The configuration file must contain a `grouplist` entry in order to be valid.
+This entry specifies, how, and where FNews stores the list of all newsgroups
+including their attributes like description and status.
 
-* __*schema*__
+```
+grouplist <methodname> {
+	# body
+}
+```
 
-  The domain-model/table-model to be instantiated and to be used. Must be __*v1*__ or __*v2*__.
-  __*v2*__ is default and __*v1*__ is deprecated.
+`<methodname>` is the name of a storage method for newsgroups+description+status records. Currently available storage methods are:
+
+* __*cass*__
+
+  Uses Apache Cassandra as storage backend. Requires a contained `keyspace`-Entry, see [below](#keyspace).
+
+### The article-to-group assignment.
+
+The configuration file must contain a `grouphead` entry in order to be valid.
+This entry specifies, how, and where FNews allocates article-numbers for each posted article.
+
+```
+grouphead <methodname> {
+	# body
+}
+```
+
+`<methodname>` is the name of a storage method for articles. Currently available storage methods are:
+
+* __*postgres*__
+
+  Uses PostgreSQL as storage backend. The Entry must contain a `dburl` key, specifying the connection url
+  It usually looks like: `'user=usr password=pwd dbname=mydatabase sslmode=disable'`
+  See also: [lib/pq](https://godoc.org/github.com/lib/pq)
+
+
+## Specifying Cassandra Keyspaces.
+
+The `keyspace`<a name="keyspace">-</a>Entry must be contained by any `store`,
+`groupindex`, `grouplist` or `grouphead`-record with the `<methodname>`=__*cass*__.
+
+```
+keyspace <name> {
+	#body
+}
+```
+
+A `keyspace`-Entry has the following keys:
+
+* __*cluster*__
+
+  (Optional) Used to differentiate between different connection pools. By default, the
+  __*cass*__ storage method create one connection-pool for every distinct `keyspace`-`<name>`
+  which can cause a conflict, if two Cassandra-clusters are used.
+
+* __*host*__
+
+  The host-name which can be used
+
+* __*user*__
+
+  Username. Useful if the Cassandra-cluster requires an authentication.
+
+* __*pass*__
+
+  Password. Useful if the Cassandra-cluster requires an authentication.
+
+```
+store cass {
+	keyspace auth_keyspace {
+		host: node1.cassandra.local
+		host: node2.cassandra.local
+		host: node3.cassandra.local
+		user: CassandraUser
+		pass: Secret123
+	}
+}
+```
 
