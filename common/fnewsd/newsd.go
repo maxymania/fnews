@@ -74,7 +74,6 @@ func (l *Lifecycle) Load() error {
 		ArticleCaps:c,
 		PostingCaps:c,
 		GroupListingCaps:c,
-		//LoginCaps:adb,
 	}
 	e = loaderauth.LoadConfig(c,l.h,l.cfgf)
 	if e!=nil { return e }

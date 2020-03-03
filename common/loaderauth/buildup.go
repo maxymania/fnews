@@ -66,6 +66,22 @@ func Open(a *config.AuthCfg) (advauth.LoginHook,error) {
 	return nil,fmt.Errorf("unknown METHOD: %s",a.Method.Method)
 }
 
+type loginDbg struct{
+	fastnntp.LoginCaps
+}
+func (ld loginDbg) AuthinfoUserPass(user, password []byte, oldh *fastnntp.Handler) (bool, *fastnntp.Handler) {
+	fmt.Printf("LOGIN %q %q\n",user,password)
+	return ld.LoginCaps.AuthinfoUserPass(user,password,oldh)
+}
+
+type writable struct{
+	fastnntp.LoginCaps
+}
+func (w writable) AuthinfoCheckPrivilege(p fastnntp.LoginPriv, h *fastnntp.Handler) bool {
+	if p==fastnntp.LoginPriv_Post { return true }
+	return w.LoginCaps.AuthinfoCheckPrivilege(p,h)
+}
+
 func Create(a *config.AuthCfg, c *caps.Caps, h *fastnntp.Handler) {
 	var err error
 	if a==nil { return }
@@ -80,15 +96,24 @@ func Create(a *config.AuthCfg, c *caps.Caps, h *fastnntp.Handler) {
 	
 	gch := advauthif.ExtractGhead(c)
 	auther.Deriv = &advauthif.Deriver{Caps:c,Ghead:gch }
+	auther.Backlink()
 	
 	if a.NoAuth.NoReading {
 		*h = fastnntp.Handler{} // Clear handler to prevent reading.
-	} else if !a.NoAuth.NoPosting { /* Unauthenticated Posting is disabled by default. */
-		// Default to ARUser
+	} else if a.NoAuth.NoPosting {
+		c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{gch,postauth.ARReader}
+	} else {
 		c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{gch,postauth.ARUser}
 	}
 	
-	h.LoginCaps = auther
+	if a.NoAuth.NoPosting||a.NoAuth.NoReading {
+		// in case of NoPosting, posting is disallowed.
+		// in case of NoReading, ANY access is disallowed.
+		h.LoginCaps = auther
+	} else {
+		// IF posting and reading is allowed for anonymous users, enable write.
+		h.LoginCaps = writable{auther}
+	}
 }
 
 type FakeSqlModel interface {
