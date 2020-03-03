@@ -6,7 +6,7 @@ title: backend.conf
 # {{page.title}}
 Configuration of the FNews service news storage backend
 
-### The article storage
+## The article storage
 
 The configuration file must contain a `store` entry in order to be valid.
 This entry specifies, how, and where FNews stores xover, header and body of an article.
@@ -77,6 +77,51 @@ grouphead <methodname> {
   It usually looks like: `'user=usr password=pwd dbname=mydatabase sslmode=disable'`
   See also: [lib/pq](https://godoc.org/github.com/lib/pq)
 
+## Specifying the article retention
+
+On usenet-servers, articles have a certain retention, after which they are purged from the server.
+By default FNews specifies a retention of `30` days.
+
+The `retention`-Entry is optional in {{page.title}}, and is useful to specify another Retention.
+
+```
+retention {
+	# `incremental' must be one of `true' or `false'
+	#    `true'  : Iterate through all `element'-Entries and apply those which match.
+	#    `false' : Iterate through the `element'-Entries; if the entry matches, then
+	#              apply the entry and terminate the loop.
+	incremental: false
+	element {
+		# Expire after N days.
+		expire-after: 200
+		
+		# Specifies a filter, an article must match to get the specified expiration time.
+		where {
+			# Requirement 1: The article must be posted to a newsgroup
+			# that starts with `de.' ...
+			newsgroups: de.*
+			# ... but not with `de.ctrl.'!
+			except: de.ctrl.*
+			
+			# Requirement 2: The article must not be cross-posted to a newsgroup,
+			# that starts with `alt.binaries'!
+			exclude: alt.binaries.*
+			
+			# Requirement 3: The article must be between 100 bytes and 10000 bytes long!
+			size: 100,10000
+			
+			# Requirement 4: The article must be between 5 bytes and 100 lines long!
+			lines: 5,100
+		}
+	}
+	
+	# This is an example, how to specify a default retention.
+	# Note that `incremental' is `false'
+	element {
+		expire-after: 50
+	}
+}
+```
 
 ## Specifying Cassandra Keyspaces.
 
