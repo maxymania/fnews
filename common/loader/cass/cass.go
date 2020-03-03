@@ -58,11 +58,18 @@ func openSession(ks *config.Keyspace) (*gocql.Session,error) {
 	return sess,nil
 }
 
+func parseConsistency(s string) (c gocql.Consistency,e error) {
+	if len(s)!=0 {
+		c,e = gocql.ParseConsistencyWrapper(s)
+	}
+	return
+}
+
 func loadAD(bs *config.ArticleDirect) (gold.ArticleDirectEX,error) {
 	sess,err := openSession(bs.Keyspace)
 	if err!=nil { return nil,err }
 	
-	update,err := gocql.ParseConsistencyWrapper(bs.Keyspace.WriteCs1)
+	update,err := parseConsistency(bs.Keyspace.WriteCs1)
 	if err!=nil { return nil,err }
 	
 	adcass.Initialize(sess)
@@ -74,9 +81,9 @@ func loadAG(bs *config.ArticleGroup) (gold.ArticleGroupEX,error) {
 	sess,err := openSession(bs.Keyspace)
 	if err!=nil { return nil,err }
 	
-	assign,err := gocql.ParseConsistencyWrapper(bs.Keyspace.WriteCs1)
+	assign,err := parseConsistency(bs.Keyspace.WriteCs1)
 	if err!=nil { return nil,err }
-	increm,err := gocql.ParseConsistencyWrapper(bs.Keyspace.WriteCs2)
+	increm,err := parseConsistency(bs.Keyspace.WriteCs2)
 	if err!=nil { return nil,err }
 	
 	cassm.InitializeN2Layer(sess)
@@ -92,7 +99,7 @@ func loadGL(bs *config.GroupList) (gold.GroupListDB,error) {
 	sess,err := openSession(bs.Keyspace)
 	if err!=nil { return nil,err }
 	
-	update,err := gocql.ParseConsistencyWrapper(bs.Keyspace.WriteCs1)
+	update,err := parseConsistency(bs.Keyspace.WriteCs1)
 	if err!=nil { return nil,err }
 	
 	glcass.Initialize(sess)
