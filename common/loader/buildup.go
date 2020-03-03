@@ -78,6 +78,10 @@ func Create(a *config.ArticleBackendCfg, c *caps.Caps) {
 	failon(err)
 	var pp gold.PostingPolicyLite = days(30)
 	
+	if a.Retention!=nil {
+		pp = a.Retention.CreateLayer(pp)
+	}
+	
 	setup.Setup(c,ad,ag,gl,pp)
 	c.GroupHeadCache = &postauth.GroupHeadCacheAuthed{gl,postauth.ARUser}
 	

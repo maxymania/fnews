@@ -29,13 +29,10 @@ import (
 	"github.com/byte-mug/fastnntp"
 	"github.com/maxymania/fnews/common/config"
 	
-	"github.com/gocql/gocql"
-	
 	"github.com/maxymania/fastnntp-polyglot/caps"
 	"github.com/maxymania/fastnntp-polyglot/postauth"
 	"github.com/maxymania/fastnntp-polyglot/postauth/advauth"
 	"github.com/maxymania/fastnntp-polyglot/postauth/advauthif"
-	"github.com/maxymania/fastnntp-polyglot/auth/cassauth"
 )
 
 var NoAuth = fmt.Errorf("No auth.")
@@ -46,23 +43,16 @@ type LoginAdm interface {
 	UpdateUserRank(user []byte, rank postauth.AuthRank) error
 }
 
+type LoginHookLoader func(a *config.AuthCfg) (advauth.LoginHook,error)
+var LoginHookLoaders = make(map[string]LoginHookLoader)
+
 func Open(a *config.AuthCfg) (advauth.LoginHook,error) {
 	if a==nil { return nil,NoAuth }
 	if !a.Enable { return nil,NoAuth }
 	if a.Method==nil { return nil,NoAuth }
 	
-	switch a.Method.Method {
-	case "cass","cassandra","cql": {
-			cluster := gocql.NewCluster(a.Method.Hosts...)
-			cluster.Keyspace = a.Method.Dbname
-			session,err := cluster.CreateSession()
-			if err!=nil { return nil,err }
-			lh := &cassauth.CassLoginHook{DB:session}
-			err = lh.InitHash(a.Method.Pwhash)
-			if err!=nil { return nil,err }
-			return lh,nil
-		}
-	}
+	if fu,ok := LoginHookLoaders[a.Method.Method]; ok { return fu(a) }
+	
 	return nil,fmt.Errorf("unknown METHOD: %s",a.Method.Method)
 }
 
@@ -122,17 +112,6 @@ type FakeSqlModel interface {
 func SemiCreate(a *config.AuthCfg) ([]FakeSqlModel,LoginAdm,error) {
 	adm,err := Open(a)
 	return nil,adm,err
-	/*
-	switch a.Method.Method {
-	case "db":{
-			db,err := sql.Open(a.Method.Driver, a.Method.Db)
-			if err!=nil { panic(err) }
-			sqla := &sqlauth.LoginDB{db}
-			return []sqlutil.SqlModel{sqla},sqla,nil
-		}
-	}
-	return nil,nil,fmt.Errorf("unknown METHOD: %s",a.Method.Method)
-	*/
 }
 
 

@@ -23,6 +23,8 @@ SOFTWARE.
 
 package config
 
+import policy "github.com/maxymania/fastnntp-polyglot/gold/policies_ex/loader"
+
 type Keyspace struct{
 	Keyspace string `inn:"$keyspace"`
 	Cluster  string `inn:"$cluster"`
@@ -61,6 +63,7 @@ type ArticleBackendCfg struct{
 	GroupIdx  *ArticleGroup  `inn:"$groupindex"`
 	GroupLst  *GroupList     `inn:"$grouplist"`
 	GroupHead *GroupHead     `inn:"$grouphead"`
+	Retention *policy.LayerCfg `inn:"$retention!"`
 }
 
 // #

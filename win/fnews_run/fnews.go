@@ -28,6 +28,8 @@ import "github.com/maxymania/fnews/common/fnewsd"
 import _ "github.com/maxymania/fnews/common/loader/cass"
 import _ "github.com/maxymania/fnews/common/loader/postgres"
 
+import _ "github.com/maxymania/fnews/common/loaderauth/cass"
+import _ "github.com/maxymania/fastnntp-polyglot/auth/pwdbcrypt"
 
 // go build github.com/maxymania/fnews/win/fnews_run
 

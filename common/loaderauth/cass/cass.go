@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Simon Schmidt
+Copyright (c) 2020 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,26 +21,33 @@ SOFTWARE.
 */
 
 
-package config
+package cass
 
-type AuthMethod struct {
-	Method string   `inn:"$method"`
-	Pwhash string   `inn:"$pwd-hash"`
-	Hosts  []string `inn:"@host"`
-	Dbname string   `inn:"$dbname"`
-	Username string `inn:"$user"`
-	Password string `inn:"$pass"`
+import (
+	"github.com/maxymania/fnews/common/config"
+	"github.com/gocql/gocql"
+	
+	"github.com/maxymania/fastnntp-polyglot/postauth/advauth"
+	"github.com/maxymania/fastnntp-polyglot/auth/cassauth"
+	
+	"github.com/maxymania/fnews/common/loaderauth"
+)
+
+func loadCass(a *config.AuthCfg) (advauth.LoginHook,error) {
+	cluster := gocql.NewCluster(a.Method.Hosts...)
+	cluster.Keyspace = a.Method.Dbname
+	if a.Method.Username!="" && a.Method.Password!="" {
+		cluster.Authenticator = gocql.PasswordAuthenticator{a.Method.Username,a.Method.Password}
+	}
+	session,err := cluster.CreateSession()
+	if err!=nil { return nil,err }
+	cassauth.Initialize(session)
+	lh := &cassauth.CassLoginHook{DB:session}
+	err = lh.InitHash(a.Method.Pwhash)
+	if err!=nil { return nil,err }
+	return lh,nil
 }
 
-type AuthNoAuth struct {
-	NoPosting bool `inn:"$no-posting"`
-	NoReading bool `inn:"$no-reading"`
+func init() {
+	loaderauth.LoginHookLoaders["cass"] = loadCass
 }
-
-type AuthCfg struct {
-	Enable bool        `inn:"$enable"`
-	Method *AuthMethod `inn:"$method"`
-	NoAuth AuthNoAuth  `inn:"$no-auth"`
-}
-
-
