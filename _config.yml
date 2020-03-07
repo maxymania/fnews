@@ -1,4 +1,5 @@
 markdown: rdiscount
+highlighter: rouge
 pygments: true
 baseurl: /fnews
 title: FNews NNTP Server
